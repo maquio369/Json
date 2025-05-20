@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Entidades TypeORM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #333;
+        }
+        
+        .container {
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        select, button {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        select {
+            width: 100%;
+            border: 1px solid #ddd;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Generador de Entidades TypeORM</h1>
+    
+    <div class="container">
+        <h2>Selecciona una tabla</h2>
+        <select id="tableSelect">
+            <option value="">Cargando tablas...</option>
+        </select>
+
+        <!-- Modifica la sección de actions para incluir el nuevo botón -->
+<div class="actions">
+    <button id="viewSchemaBtn">Ver Esquema</button>
+    <button id="generateEntityBtn">Generar Entidad TypeORM</button>
+    <button id="generateAllBtn" style="background-color: #2196F3;">Generar Todas las Entidades</button>
+</div>
+
+
+        
+        <div id="schemaInfo" style="display: none;">
+            <h3>Esquema de la tabla</h3>
+            <pre id="schemaContent"></pre>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const tableSelect = document.getElementById('tableSelect');
+            const viewSchemaBtn = document.getElementById('viewSchemaBtn');
+            const generateEntityBtn = document.getElementById('generateEntityBtn');
+            const schemaInfo = document.getElementById('schemaInfo');
+            const schemaContent = document.getElementById('schemaContent');
+            
+            // Cargar las tablas disponibles
+            try {
+                const response = await fetch('/api/tables');
+                const tables = await response.json();
+                
+                // Limpiar y rellenar el select
+                tableSelect.innerHTML = '';
+                
+                if (tables.length === 0) {
+                    tableSelect.innerHTML = '<option value="">No se encontraron tablas</option>';
+                } else {
+                    tableSelect.innerHTML = '<option value="">Selecciona una tabla</option>';
+                    tables.forEach(table => {
+                        const option = document.createElement('option');
+                        option.value = table.table_name;
+                        option.textContent = `${table.table_name}${table.table_comment ? ` (${table.table_comment})` : ''}`;
+                        tableSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error al cargar las tablas:', error);
+                tableSelect.innerHTML = '<option value="">Error al cargar las tablas</option>';
+            }
+            // Obtener referencia al botón de generar todas las entidades
+            const generateAllBtn = document.getElementById('generateAllBtn');
+
+            // Generar y descargar todas las entidades
+            generateAllBtn.addEventListener('click', () => {
+                if (confirm('¿Estás seguro de que deseas generar entidades para todas las tablas? Esto puede tardar un momento.')) {
+                    window.location.href = '/api/generate-all-entities';
+                }
+            });
+
+            // Ver esquema de la tabla seleccionada
+            viewSchemaBtn.addEventListener('click', async () => {
+                const tableName = tableSelect.value;
+                
+                if (!tableName) {
+                    alert('Por favor, selecciona una tabla');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/api/schema?tables=${tableName}`);
+                    const schema = await response.json();
+                    
+                    // Mostrar el esquema en formato JSON
+                    schemaContent.textContent = JSON.stringify(schema, null, 2);
+                    schemaInfo.style.display = 'block';
+                } catch (error) {
+                    console.error('Error al obtener el esquema:', error);
+                    alert('Error al obtener el esquema de la tabla');
+                }
+            });
+
+            // Generar y descargar entidad TypeORM
+            generateEntityBtn.addEventListener('click', () => {
+                const tableName = tableSelect.value;
+                
+                if (!tableName) {
+                    alert('Por favor, selecciona una tabla');
+                    return;
+                }
+                
+                // Redireccionar para descargar el archivo
+                window.location.href = `/api/generate-entity/${tableName}`;
+            });
+        });
+    </script>
+</body>
+</html>
