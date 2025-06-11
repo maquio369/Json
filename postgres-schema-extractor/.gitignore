@@ -1,0 +1,19 @@
+# Dependencias
+node_modules/
+
+# Entornos
+.env
+.env.local
+
+# Logs
+*.log
+
+# Builds
+dist/
+build/
+.cache/
+
+# IDE/Editor
+.idea/
+.vscode/
+*.swp

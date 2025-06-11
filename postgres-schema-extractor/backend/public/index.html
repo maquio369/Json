@@ -3,131 +3,434 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Entidades TypeORM</title>
+    <title>Generador de Entidades TypeORM - Versión Mejorada</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f5f7fa;
         }
         
         h1 {
-            color: #333;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
         }
         
         .container {
-            background-color: #f5f5f5;
-            border-radius: 5px;
-            padding: 20px;
-            margin-top: 20px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
         }
         
         select, button {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 14px;
         }
         
         select {
             width: 100%;
-            border: 1px solid #ddd;
+            background-color: white;
         }
         
         button {
-            background-color: #4CAF50;
+            background-color: #3498db;
             color: white;
             border: none;
             cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
         }
         
         button:hover {
-            background-color: #45a049;
+            background-color: #2980b9;
+        }
+        
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .btn-success {
+            background-color: #27ae60;
+        }
+        
+        .btn-success:hover {
+            background-color: #219a52;
+        }
+        
+        .btn-info {
+            background-color: #17a2b8;
+        }
+        
+        .btn-info:hover {
+            background-color: #138496;
+        }
+        
+        .btn-warning {
+            background-color: #f39c12;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+        
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        
+        .checkbox-group label {
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
         }
         
         .actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .info-section {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .info-tabs {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .tab-button {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #7f8c8d;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab-button.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
         }
         
         pre {
-            background-color: #f8f8f8;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 15px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            border-radius: 6px;
+            padding: 20px;
             overflow-x: auto;
-            margin-top: 20px;
+            margin: 15px 0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .validation-result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+        
+        .validation-success {
+            background-color: #d4edda;
+            border-color: #27ae60;
+            color: #155724;
+        }
+        
+        .validation-error {
+            background-color: #f8d7da;
+            border-color: #e74c3c;
+            color: #721c24;
+        }
+        
+        .validation-item {
+            margin: 5px 0;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        
+        .validation-error-item {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .validation-warning-item {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .validation-info-item {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .feature-badge {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .connection-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .connection-error {
+            background-color: #f8d7da;
+            color: #721c24;
         }
     </style>
 </head>
 <body>
-    <h1>Generador de Entidades TypeORM</h1>
+    <h1>🚀 Generador de Entidades TypeORM</h1>
+    <p class="subtitle">Versión Mejorada con Relaciones, Índices y Validaciones</p>
+    
+    <!-- Estado de conexión -->
+    <div id="connectionStatus" class="connection-status" style="display: none;"></div>
     
     <div class="container">
-        <h2>Selecciona una tabla</h2>
-        <select id="tableSelect">
-            <option value="">Cargando tablas...</option>
-        </select>
+        <div class="form-group">
+            <label for="tableSelect">Selecciona una tabla:</label>
+            <select id="tableSelect">
+                <option value="">Cargando tablas...</option>
+            </select>
+        </div>
 
-        <!-- Modifica la sección de actions para incluir el nuevo botón -->
-<div class="actions">
-    <button id="viewSchemaBtn">Ver Esquema</button>
-    <button id="generateEntityBtn">Generar Entidad TypeORM</button>
-    <button id="generateAllBtn" style="background-color: #2196F3;">Generar Todas las Entidades</button>
-</div>
+        <div class="form-group">
+            <label>Opciones de generación:</label>
+            <div class="options-grid">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="includeRelations" checked>
+                    <label for="includeRelations">Incluir Relaciones <span class="feature-badge">NUEVO</span></label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="includeIndexes" checked>
+                    <label for="includeIndexes">Incluir Índices <span class="feature-badge">NUEVO</span></label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="includeValidations" checked>
+                    <label for="includeValidations">Incluir Validaciones <span class="feature-badge">NUEVO</span></label>
+                </div>
+            </div>
+        </div>
 
-
+        <div class="actions">
+            <button id="viewSchemaBtn" class="btn-info">📊 Ver Esquema Completo</button>
+            <button id="viewRelationsBtn" class="btn-warning">🔗 Ver Relaciones</button>
+            <button id="generateEntityBtn" class="btn-success">📄 Generar Entidad</button>
+            <button id="generateAllBtn" class="btn-success">📦 Generar Todas</button>
+            <button id="validateBtn" class="btn-warning" style="display: none;">✅ Validar Código</button>
+        </div>
         
-        <div id="schemaInfo" style="display: none;">
-            <h3>Esquema de la tabla</h3>
-            <pre id="schemaContent"></pre>
+        <div id="infoSection" class="info-section">
+            <div class="info-tabs">
+                <button class="tab-button active" data-tab="schema">Esquema</button>
+                <button class="tab-button" data-tab="relations">Relaciones</button>
+                <button class="tab-button" data-tab="indexes">Índices</button>
+                <button class="tab-button" data-tab="constraints">Constraints</button>
+                <button class="tab-button" data-tab="preview">Vista Previa</button>
+            </div>
+            
+            <div class="tab-content active" id="schema-tab">
+                <h3>📋 Esquema de la tabla</h3>
+                <pre id="schemaContent"></pre>
+            </div>
+            
+            <div class="tab-content" id="relations-tab">
+                <h3>🔗 Relaciones</h3>
+                <pre id="relationsContent"></pre>
+            </div>
+            
+            <div class="tab-content" id="indexes-tab">
+                <h3>📊 Índices</h3>
+                <pre id="indexesContent"></pre>
+            </div>
+            
+            <div class="tab-content" id="constraints-tab">
+                <h3>🛡️ Constraints</h3>
+                <pre id="constraintsContent"></pre>
+            </div>
+            
+            <div class="tab-content" id="preview-tab">
+                <h3>👀 Vista Previa del Código</h3>
+                <pre id="previewContent"></pre>
+                <div id="validationResult"></div>
+            </div>
         </div>
     </div>
     
     <script>
+        let currentTableData = null;
+        
         document.addEventListener('DOMContentLoaded', async () => {
+            // Referencias a elementos DOM
             const tableSelect = document.getElementById('tableSelect');
             const viewSchemaBtn = document.getElementById('viewSchemaBtn');
+            const viewRelationsBtn = document.getElementById('viewRelationsBtn');
             const generateEntityBtn = document.getElementById('generateEntityBtn');
-            const schemaInfo = document.getElementById('schemaInfo');
-            const schemaContent = document.getElementById('schemaContent');
-            
-            // Cargar las tablas disponibles
-            try {
-                const response = await fetch('/api/tables');
-                const tables = await response.json();
-                
-                // Limpiar y rellenar el select
-                tableSelect.innerHTML = '';
-                
-                if (tables.length === 0) {
-                    tableSelect.innerHTML = '<option value="">No se encontraron tablas</option>';
-                } else {
-                    tableSelect.innerHTML = '<option value="">Selecciona una tabla</option>';
-                    tables.forEach(table => {
-                        const option = document.createElement('option');
-                        option.value = table.table_name;
-                        option.textContent = `${table.table_name}${table.table_comment ? ` (${table.table_comment})` : ''}`;
-                        tableSelect.appendChild(option);
-                    });
-                }
-            } catch (error) {
-                console.error('Error al cargar las tablas:', error);
-                tableSelect.innerHTML = '<option value="">Error al cargar las tablas</option>';
-            }
-            // Obtener referencia al botón de generar todas las entidades
             const generateAllBtn = document.getElementById('generateAllBtn');
-
-            // Generar y descargar todas las entidades
-            generateAllBtn.addEventListener('click', () => {
-                if (confirm('¿Estás seguro de que deseas generar entidades para todas las tablas? Esto puede tardar un momento.')) {
-                    window.location.href = '/api/generate-all-entities';
-                }
+            const validateBtn = document.getElementById('validateBtn');
+            const infoSection = document.getElementById('infoSection');
+            const connectionStatus = document.getElementById('connectionStatus');
+            
+            // Opciones
+            const includeRelations = document.getElementById('includeRelations');
+            const includeIndexes = document.getElementById('includeIndexes');
+            const includeValidations = document.getElementById('includeValidations');
+            
+            // Probar conexión
+            await testConnection();
+            
+            // Cargar tablas
+            await loadTables();
+            
+            // Event listeners para tabs
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabName = button.dataset.tab;
+                    switchTab(tabName);
+                });
             });
-
-            // Ver esquema de la tabla seleccionada
-            viewSchemaBtn.addEventListener('click', async () => {
+            
+            // Event listeners para botones
+            viewSchemaBtn.addEventListener('click', () => viewCompleteSchema());
+            viewRelationsBtn.addEventListener('click', () => viewRelations());
+            generateEntityBtn.addEventListener('click', () => generateEntity());
+            generateAllBtn.addEventListener('click', () => generateAllEntities());
+            validateBtn.addEventListener('click', () => validateCode());
+            
+            // Funciones
+            async function testConnection() {
+                try {
+                    const response = await fetch('/api/test');
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        connectionStatus.textContent = '✅ Conexión exitosa a la base de datos';
+                        connectionStatus.className = 'connection-status connection-success';
+                    } else {
+                        connectionStatus.textContent = '❌ Error de conexión: ' + result.error;
+                        connectionStatus.className = 'connection-status connection-error';
+                    }
+                    connectionStatus.style.display = 'block';
+                } catch (error) {
+                    connectionStatus.textContent = '❌ Error de conexión: ' + error.message;
+                    connectionStatus.className = 'connection-status connection-error';
+                    connectionStatus.style.display = 'block';
+                }
+            }
+            
+            async function loadTables() {
+                try {
+                    const response = await fetch('/api/tables');
+                    const tables = await response.json();
+                    
+                    tableSelect.innerHTML = '';
+                    
+                    if (tables.length === 0) {
+                        tableSelect.innerHTML = '<option value="">No se encontraron tablas</option>';
+                    } else {
+                        tableSelect.innerHTML = '<option value="">Selecciona una tabla</option>';
+                        tables.forEach(table => {
+                            const option = document.createElement('option');
+                            option.value = table.table_name;
+                            option.textContent = `${table.table_name}${table.table_comment ? ` (${table.table_comment})` : ''}`;
+                            tableSelect.appendChild(option);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error al cargar las tablas:', error);
+                    tableSelect.innerHTML = '<option value="">Error al cargar las tablas</option>';
+                }
+            }
+            
+            async function viewCompleteSchema() {
                 const tableName = tableSelect.value;
                 
                 if (!tableName) {
@@ -136,20 +439,55 @@
                 }
                 
                 try {
+                    viewSchemaBtn.innerHTML = '<span class="loading"></span> Cargando...';
+                    viewSchemaBtn.disabled = true;
+                    
+                    // Obtener esquema completo
                     const response = await fetch(`/api/schema?tables=${tableName}`);
                     const schema = await response.json();
                     
-                    // Mostrar el esquema en formato JSON
-                    schemaContent.textContent = JSON.stringify(schema, null, 2);
-                    schemaInfo.style.display = 'block';
+                    // Obtener relaciones, índices y constraints
+                    const [relationsRes, indexesRes, constraintsRes] = await Promise.all([
+                        fetch(`/api/relationships/${tableName}`),
+                        fetch(`/api/indexes/${tableName}`),
+                        fetch(`/api/constraints/${tableName}`)
+                    ]);
+                    
+                    const relations = await relationsRes.json();
+                    const indexes = await indexesRes.json();
+                    const constraints = await constraintsRes.json();
+                    
+                    // Almacenar datos para uso posterior
+                    currentTableData = {
+                        schema,
+                        relations,
+                        indexes,
+                        constraints,
+                        tableName
+                    };
+                    
+                    // Mostrar información en tabs
+                    document.getElementById('schemaContent').textContent = JSON.stringify(schema, null, 2);
+                    document.getElementById('relationsContent').textContent = JSON.stringify(relations, null, 2);
+                    document.getElementById('indexesContent').textContent = JSON.stringify(indexes, null, 2);
+                    document.getElementById('constraintsContent').textContent = JSON.stringify(constraints, null, 2);
+                    
+                    // Generar vista previa
+                    await generatePreview();
+                    
+                    infoSection.style.display = 'block';
+                    validateBtn.style.display = 'inline-block';
+                    
                 } catch (error) {
-                    console.error('Error al obtener el esquema:', error);
-                    alert('Error al obtener el esquema de la tabla');
+                    console.error('Error al obtener información:', error);
+                    alert('Error al obtener información de la tabla');
+                } finally {
+                    viewSchemaBtn.innerHTML = '📊 Ver Esquema Completo';
+                    viewSchemaBtn.disabled = false;
                 }
-            });
-
-            // Generar y descargar entidad TypeORM
-            generateEntityBtn.addEventListener('click', () => {
+            }
+            
+            async function viewRelations() {
                 const tableName = tableSelect.value;
                 
                 if (!tableName) {
@@ -157,8 +495,183 @@
                     return;
                 }
                 
-                // Redireccionar para descargar el archivo
-                window.location.href = `/api/generate-entity/${tableName}`;
+                try {
+                    const response = await fetch(`/api/relationships/${tableName}`);
+                    const relations = await response.json();
+                    
+                    document.getElementById('relationsContent').textContent = JSON.stringify(relations, null, 2);
+                    
+                    infoSection.style.display = 'block';
+                    switchTab('relations');
+                    
+                } catch (error) {
+                    console.error('Error al obtener relaciones:', error);
+                    alert('Error al obtener relaciones de la tabla');
+                }
+            }
+            
+            async function generateEntity() {
+                const tableName = tableSelect.value;
+                
+                if (!tableName) {
+                    alert('Por favor, selecciona una tabla');
+                    return;
+                }
+                
+                const options = new URLSearchParams();
+                if (includeRelations.checked) options.append('relations', 'true');
+                if (includeIndexes.checked) options.append('indexes', 'true');
+                if (includeValidations.checked) options.append('validations', 'true');
+                
+                window.location.href = `/api/generate-entity/${tableName}?${options.toString()}`;
+            }
+            
+            async function generateAllEntities() {
+                if (!confirm('¿Estás seguro de que deseas generar entidades para todas las tablas? Esto puede tardar un momento.')) {
+                    return;
+                }
+                
+                const options = new URLSearchParams();
+                if (includeRelations.checked) options.append('relations', 'true');
+                if (includeIndexes.checked) options.append('indexes', 'true');
+                if (includeValidations.checked) options.append('validations', 'true');
+                
+                window.location.href = `/api/generate-all-entities?${options.toString()}`;
+            }
+            
+            async function generatePreview() {
+                if (!currentTableData) return;
+                
+                try {
+                    // Generar vista previa del código (simulación)
+                    const previewContent = `// Vista previa de ${currentTableData.tableName}.entity.ts
+// Opciones: ${includeRelations.checked ? 'Relaciones ' : ''}${includeIndexes.checked ? 'Índices ' : ''}${includeValidations.checked ? 'Validaciones' : ''}
+
+import { Entity, Column, PrimaryGeneratedColumn${includeRelations.checked ? ', ManyToOne, OneToMany, JoinColumn' : ''}${includeIndexes.checked ? ', Index' : ''}${includeValidations.checked ? ', Check, Unique' : ''} } from 'typeorm';
+${includeValidations.checked ? 'import { IsNotEmpty, IsEmail, Length, IsNumber, IsDate } from \'class-validator\';' : ''}
+
+${currentTableData.schema[currentTableData.tableName]?.comment ? `/**\n * ${currentTableData.schema[currentTableData.tableName].comment}\n */` : ''}
+@Entity("${currentTableData.tableName}")
+export class ${toPascalCase(currentTableData.tableName)} {
+  // ... columnas y relaciones generadas automáticamente
+  // Total de columnas: ${currentTableData.schema[currentTableData.tableName]?.columns?.length || 0}
+  // Relaciones salientes: ${currentTableData.relations?.foreignKeys?.length || 0}
+  // Relaciones entrantes: ${currentTableData.relations?.incomingRelations?.length || 0}
+  // Índices: ${currentTableData.indexes?.indexes?.length || 0}
+  // Constraints: ${currentTableData.constraints?.constraints?.length || 0}
+}
+
+// Genera el archivo completo usando el botón "Generar Entidad"`;
+                    
+                    document.getElementById('previewContent').textContent = previewContent;
+                    
+                } catch (error) {
+                    console.error('Error al generar vista previa:', error);
+                }
+            }
+            
+            async function validateCode() {
+                if (!currentTableData) {
+                    alert('Primero visualiza el esquema de una tabla');
+                    return;
+                }
+                
+                try {
+                    validateBtn.innerHTML = '<span class="loading"></span> Validando...';
+                    validateBtn.disabled = true;
+                    
+                    const previewCode = document.getElementById('previewContent').textContent;
+                    
+                    const response = await fetch('/api/validate-entity', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tableName: currentTableData.tableName,
+                            entityCode: previewCode
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    displayValidationResult(result);
+                    
+                } catch (error) {
+                    console.error('Error al validar código:', error);
+                    alert('Error al validar el código');
+                } finally {
+                    validateBtn.innerHTML = '✅ Validar Código';
+                    validateBtn.disabled = false;
+                }
+            }
+            
+            function displayValidationResult(result) {
+                const validationDiv = document.getElementById('validationResult');
+                
+                if (result.isValid) {
+                    validationDiv.innerHTML = `
+                        <div class="validation-result validation-success">
+                            <h4>✅ Validación Exitosa</h4>
+                            <p>El código generado es válido y está listo para usar.</p>
+                        </div>
+                    `;
+                } else {
+                    validationDiv.innerHTML = `
+                        <div class="validation-result validation-error">
+                            <h4>❌ Problemas Encontrados</h4>
+                        </div>
+                    `;
+                }
+                
+                if (result.validations && result.validations.length > 0) {
+                    const validationsHtml = result.validations.map(validation => {
+                        const className = `validation-${validation.type}-item`;
+                        const icon = validation.type === 'error' ? '❌' : 
+                                   validation.type === 'warning' ? '⚠️' : 'ℹ️';
+                        return `<div class="validation-item ${className}">${icon} ${validation.message}</div>`;
+                    }).join('');
+                    
+                    validationDiv.innerHTML += `<div>${validationsHtml}</div>`;
+                }
+                
+                if (result.suggestions && result.suggestions.length > 0) {
+                    const suggestionsHtml = result.suggestions.map(suggestion => 
+                        `<div class="validation-item validation-info-item">💡 ${suggestion}</div>`
+                    ).join('');
+                    
+                    validationDiv.innerHTML += `
+                        <div style="margin-top: 15px;">
+                            <h5>💡 Sugerencias:</h5>
+                            ${suggestionsHtml}
+                        </div>
+                    `;
+                }
+            }
+            
+            function switchTab(tabName) {
+                // Desactivar todas las tabs
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                
+                // Activar la tab seleccionada
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+            }
+            
+            function toPascalCase(str) {
+                return str.split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                    .join('');
+            }
+            
+            // Event listeners para opciones (regenerar vista previa cuando cambian)
+            [includeRelations, includeIndexes, includeValidations].forEach(checkbox => {
+                checkbox.addEventListener('change', () => {
+                    if (currentTableData) {
+                        generatePreview();
+                    }
+                });
             });
         });
     </script>
