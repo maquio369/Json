@@ -329,7 +329,21 @@ app.get('/api/generate-entity/:tableName', async (req, res) => {
       defaultValue = `'${defaultValue}'`; // Agregar comillas para string
     } else if (tsType === 'boolean') {
       // Convertir 't'/'f' a true/false
-      defaultValue = defaultValue === "'t'" ? 'true' : 'false';
+
+      function getBooleanDefault(postgresValue) {
+  const cleanValue = postgresValue.toLowerCase().trim();
+  
+  if (cleanValue === 'true' || cleanValue === "'t'" || cleanValue.startsWith("'true'")) {
+    return 'true';
+  }
+  
+  if (cleanValue === 'false' || cleanValue === "'f'" || cleanValue.startsWith("'false'")) {
+    return 'false';
+  }
+  
+  return 'false';
+}
+    defaultValue = getBooleanDefault(defaultValue);
     }
     
     columnOptions.push(`default: ${defaultValue}`);
@@ -595,6 +609,355 @@ app.get('/api/generate-all-entities', async (req, res) => {
   }
 });
 
+
+
+// Agregar estas funciones al final de server.js, antes del app.listen()
+
+// Función para convertir nombre de tabla a diferentes formatos
+function formatTableName(tableName) {
+  // PascalCase para clase
+  const pascalCase = tableName
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join('');
+  
+  // camelCase para variables
+  const camelCase = tableName
+    .split('_')
+    .map((word, index) => 
+      index === 0 
+        ? word.toLowerCase() 
+        : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    )
+    .join('');
+  
+  // kebab-case para URLs
+  const kebabCase = tableName.toLowerCase().replace(/_/g, '-');
+  
+  return { pascalCase, camelCase, kebabCase };
+}
+
+// Generar Controller
+function generateController(tableName) {
+  const { pascalCase, camelCase } = formatTableName(tableName);
+  
+  return `import { Controller } from "@nestjs/common";
+import { BaseController } from "src/commons/controller.commons";
+import { BaseService } from "src/commons/service.commons";
+import { ${pascalCase} } from "./${tableName}.entity";
+import { ${pascalCase}Service } from "./${tableName}.service";
+
+@Controller('api/${tableName.toLowerCase().replace(/_/g, '-')}')
+export class ${pascalCase}Controller extends BaseController<${pascalCase}> {
+
+    constructor(private readonly ${camelCase}Service: ${pascalCase}Service) {
+        super();
+    }
+
+    getService(): BaseService<${pascalCase}> {
+        return this.${camelCase}Service;
+    }
+
+}`;
+}
+
+// Generar Service
+function generateService(tableName) {
+  const { pascalCase, camelCase } = formatTableName(tableName);
+  
+  return `import { Injectable } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { BaseService } from "src/commons/service.commons";
+import { Repository } from "typeorm";
+import { ${pascalCase} } from "./${tableName}.entity";
+
+@Injectable()
+export class ${pascalCase}Service extends BaseService<${pascalCase}> {
+
+    constructor(@InjectRepository(${pascalCase}) private ${camelCase}Repo: Repository<${pascalCase}>) {
+        super();
+    }
+
+    getRepository(): Repository<${pascalCase}> {
+        return this.${camelCase}Repo;
+    }
+
+}`;
+}
+
+// Generar Module
+function generateModule(tableName) {
+  const { pascalCase } = formatTableName(tableName);
+  
+  return `import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ${pascalCase}Controller } from './${tableName}.controller';
+import { ${pascalCase} } from './${tableName}.entity';
+import { ${pascalCase}Service } from './${tableName}.service';
+
+@Module({
+    imports: [TypeOrmModule.forFeature([${pascalCase}])],
+    providers: [${pascalCase}Service],
+    controllers: [${pascalCase}Controller]
+})
+export class ${pascalCase}Module {
+
+}`;
+}
+
+// Endpoint para generar archivos NestJS para una tabla específica
+app.get('/api/generate-nestjs/:tableName', async (req, res) => {
+  try {
+    const { tableName } = req.params;
+    
+    // Validar nombre de tabla
+    if (!tableName.match(/^[a-zA-Z0-9_]+$/)) {
+      return res.status(400).json({ error: 'Nombre de tabla inválido' });
+    }
+    
+    const client = await pool.connect();
+    
+    // Verificar que la tabla existe
+    const tableExistsQuery = `
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_name = $1;
+    `;
+    
+    const tableExists = await client.query(tableExistsQuery, [tableName]);
+    
+    if (tableExists.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'Tabla no encontrada' });
+    }
+    
+    // Primero generar la entidad
+    const entityCode = await generateEntityForTable(client, tableName);
+    
+    // Generar los otros archivos
+    const controllerCode = generateController(tableName);
+    const serviceCode = generateService(tableName);
+    const moduleCode = generateModule(tableName);
+    
+    client.release();
+    
+    // Crear archivo ZIP con todos los archivos
+    const archiver = require('archiver');
+    
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename=${tableName}-nestjs-files.zip`);
+    
+    const archive = archiver('zip', {
+      zlib: { level: 9 }
+    });
+    
+    archive.pipe(res);
+    
+    // Agregar archivos al ZIP
+    archive.append(entityCode, { name: `${tableName}.entity.ts` });
+    archive.append(controllerCode, { name: `${tableName}.controller.ts` });
+    archive.append(serviceCode, { name: `${tableName}.service.ts` });
+    archive.append(moduleCode, { name: `${tableName}.module.ts` });
+    
+    archive.finalize();
+    
+  } catch (error) {
+    console.error('Error al generar archivos NestJS:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint para generar archivos NestJS para todas las tablas
+app.get('/api/generate-all-nestjs', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    
+    // Obtener todas las tablas
+    const tablesQuery = `
+      SELECT table_name
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+      ORDER BY table_name;
+    `;
+    
+    const tablesResult = await client.query(tablesQuery);
+    
+    if (tablesResult.rows.length === 0) {
+      client.release();
+      return res.status(404).json({ error: 'No se encontraron tablas' });
+    }
+    
+    // Crear archivo ZIP
+    const archiver = require('archiver');
+    
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename=all-nestjs-files.zip');
+    
+    const archive = archiver('zip', {
+      zlib: { level: 9 }
+    });
+    
+    archive.pipe(res);
+    
+    // Para cada tabla, generar todos los archivos
+    for (const tableRow of tablesResult.rows) {
+      const tableName = tableRow.table_name;
+      
+      try {
+        // Generar la entidad
+        const entityCode = await generateEntityForTable(client, tableName);
+        
+        // Generar los otros archivos
+        const controllerCode = generateController(tableName);
+        const serviceCode = generateService(tableName);
+        const moduleCode = generateModule(tableName);
+        
+        // Agregar archivos al ZIP en carpetas organizadas
+        archive.append(entityCode, { name: `${tableName}/${tableName}.entity.ts` });
+        archive.append(controllerCode, { name: `${tableName}/${tableName}.controller.ts` });
+        archive.append(serviceCode, { name: `${tableName}/${tableName}.service.ts` });
+        archive.append(moduleCode, { name: `${tableName}/${tableName}.module.ts` });
+        
+      } catch (error) {
+        console.error(`Error generando archivos para tabla ${tableName}:`, error);
+        // Continuar con las otras tablas
+      }
+    }
+    
+    client.release();
+    archive.finalize();
+    
+  } catch (error) {
+    console.error('Error al generar todos los archivos NestJS:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Función auxiliar para generar una entidad (reutilizar código existente)
+async function generateEntityForTable(client, tableName) {
+  // Obtener esquema de la tabla
+  const schemaQuery = `
+    SELECT 
+      c.column_name, 
+      c.data_type, 
+      c.character_maximum_length,
+      c.is_nullable,
+      c.column_default,
+      pgd.description as column_comment
+    FROM 
+      information_schema.columns c
+    LEFT JOIN 
+      pg_catalog.pg_statio_all_tables st ON st.relname = c.table_name
+    LEFT JOIN 
+      pg_catalog.pg_description pgd ON pgd.objoid = st.relid 
+      AND pgd.objsubid = c.ordinal_position
+    WHERE 
+      c.table_schema = 'public' 
+      AND c.table_name = $1
+    ORDER BY 
+      c.ordinal_position;
+  `;
+  
+  const columnsResult = await client.query(schemaQuery, [tableName]);
+  
+  // Obtener comentario de la tabla
+  const tableCommentQuery = `
+    SELECT obj_description(pgc.oid) as table_comment
+    FROM pg_class pgc
+    WHERE pgc.relname = $1;
+  `;
+  const tableCommentResult = await client.query(tableCommentQuery, [tableName]);
+  
+  // Obtener clave primaria
+  const pkQuery = `
+    SELECT 
+      c.column_name
+    FROM 
+      information_schema.table_constraints tc
+    JOIN 
+      information_schema.constraint_column_usage ccu 
+      ON tc.constraint_name = ccu.constraint_name
+    JOIN 
+      information_schema.columns c 
+      ON c.table_name = tc.table_name AND c.column_name = ccu.column_name
+    WHERE 
+      tc.constraint_type = 'PRIMARY KEY' 
+      AND tc.table_name = $1;
+  `;
+  
+  const pkResult = await client.query(pkQuery, [tableName]);
+  
+  // Generar el código TypeORM
+  let entityCode = `import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';\n\n`;
+  
+  // Añadir comentario de tabla si existe
+  if (tableCommentResult.rows[0]?.table_comment) {
+    entityCode += `/**\n * ${tableCommentResult.rows[0].table_comment}\n */\n`;
+  }
+  
+  entityCode += `@Entity()\nexport class ${toPascalCase(tableName)} {\n`;
+  
+  // Procesar columnas
+  for (const column of columnsResult.rows) {
+    // Determinar si es clave primaria
+    const isPrimaryKey = pkResult.rows.some(pk => pk.column_name === column.column_name);
+    
+    // Obtener tipo TypeScript para el tipo PostgreSQL
+    const tsType = pgToTsTypeMap[column.data_type.toLowerCase()] || 'any';
+    
+    // Generar decorador de columna
+    if (isPrimaryKey) {
+      entityCode += `  @PrimaryGeneratedColumn()\n`;
+    } else {
+      // Construir opciones del decorador @Column
+      let columnOptions = [];
+      
+      if (column.is_nullable === 'NO') {
+        columnOptions.push(`nullable: false`);
+      }
+      
+      if (column.column_default && !column.column_default.includes('nextval')) {
+        let defaultValue = column.column_default;
+        
+        // Manejar específicamente los timestamps por defecto
+        if (column.data_type.toLowerCase().includes('timestamp') && 
+            (defaultValue.includes('CURRENT_TIMESTAMP') || defaultValue.includes('now()'))) {
+          columnOptions.push(`type: 'timestamp'`);
+          columnOptions.push(`default: () => "CURRENT_TIMESTAMP"`);
+        } else {
+          // Formatear el valor predeterminado según el tipo
+          if (tsType === 'string') {
+            // Limpiar comillas simples que vienen de PostgreSQL
+            defaultValue = defaultValue.replace(/^'(.*)'$/, '$1');
+            defaultValue = `'${defaultValue}'`; // Agregar comillas para string
+          } else if (tsType === 'boolean') {
+            // Convertir 't'/'f' a true/false
+            defaultValue = defaultValue === "'t'" ? 'true' : 'false';
+          }
+          
+          columnOptions.push(`default: ${defaultValue}`);
+        }
+      }
+      
+      if (column.column_comment) {
+        columnOptions.push(`comment: '${column.column_comment.replace(/'/g, "\\'")}'`);
+      }
+      
+      if (columnOptions.length > 0) {
+        entityCode += `  @Column({ ${columnOptions.join(', ')} })\n`;
+      } else {
+        entityCode += `  @Column()\n`;
+      }
+    }
+    
+    // Agregar la propiedad
+    entityCode += `  ${column.column_name}: ${tsType};\n\n`;
+  }
+  
+  entityCode += `}\n`;
+  
+  return entityCode;
+}
 
 // Iniciar el servidor
 app.listen(port, () => {

@@ -3,84 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Entidades TypeORM</title>
+    <title>Generador de Entidades TypeORM y NestJS</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
         }
         
         h1 {
-            color: #333;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 16px;
         }
         
         .container {
-            background-color: #f5f5f5;
-            border-radius: 5px;
-            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
             margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section h2 {
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
         }
         
         select, button {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            font-size: 14px;
         }
         
         select {
             width: 100%;
-            border: 1px solid #ddd;
+            border: 2px solid #bdc3c7;
+            background-color: white;
+        }
+        
+        select:focus {
+            border-color: #3498db;
+            outline: none;
         }
         
         button {
-            background-color: #4CAF50;
-            color: white;
             border: none;
             cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 10px;
         }
         
-        button:hover {
-            background-color: #45a049;
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background-color: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #229954;
+            transform: translateY(-2px);
+        }
+        
+        .btn-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .btn-info:hover {
+            background-color: #138496;
+            transform: translateY(-2px);
+        }
+        
+        .btn-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #d68910;
+            transform: translateY(-2px);
         }
         
         .actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .action-group {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .action-group h3 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 16px;
         }
         
         pre {
-            background-color: #f8f8f8;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 20px;
             overflow-x: auto;
             margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        
+        .alert-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .disabled {
+            opacity: 0.6;
+            cursor: not-allowed !important;
         }
     </style>
 </head>
 <body>
-    <h1>Generador de Entidades TypeORM</h1>
+    <div class="header">
+        <h1>🚀 Generador de Entidades TypeORM y NestJS</h1>
+        <p class="subtitle">Genera automáticamente entidades, controladores, servicios y módulos para NestJS</p>
+    </div>
     
     <div class="container">
-        <h2>Selecciona una tabla</h2>
-        <select id="tableSelect">
-            <option value="">Cargando tablas...</option>
-        </select>
+        <div class="section">
+            <h2>📋 Selecciona una tabla</h2>
+            <select id="tableSelect">
+                <option value="">Cargando tablas...</option>
+            </select>
+            
+            <div class="alert alert-info">
+                <strong>💡 Tip:</strong> Selecciona una tabla para generar archivos individuales, o usa las opciones de "Generar Todo" para procesar todas las tablas a la vez.
+            </div>
+        </div>
 
-        <!-- Modifica la sección de actions para incluir el nuevo botón -->
-<div class="actions">
-    <button id="viewSchemaBtn">Ver Esquema</button>
-    <button id="generateEntityBtn">Generar Entidad TypeORM</button>
-    <button id="generateAllBtn" style="background-color: #2196F3;">Generar Todas las Entidades</button>
-</div>
-
-
+        <div class="actions">
+            <div class="action-group">
+                <h3>🔍 Ver Información</h3>
+                <button id="viewSchemaBtn" class="btn-info">Ver Esquema</button>
+            </div>
+            
+            <div class="action-group">
+                <h3>📄 Archivos Individuales</h3>
+                <button id="generateEntityBtn" class="btn-primary">Generar Solo Entidad</button>
+                <button id="generateNestjsBtn" class="btn-success">Generar Archivos NestJS</button>
+            </div>
+            
+            <div class="action-group">
+                <h3>📦 Generar Todo</h3>
+                <button id="generateAllEntitiesBtn" class="btn-warning">Todas las Entidades</button>
+                <button id="generateAllNestjsBtn" class="btn-success">Todos los Archivos NestJS</button>
+            </div>
+        </div>
         
         <div id="schemaInfo" style="display: none;">
-            <h3>Esquema de la tabla</h3>
+            <h3>📊 Esquema de la tabla</h3>
             <pre id="schemaContent"></pre>
         </div>
     </div>
@@ -90,8 +226,28 @@
             const tableSelect = document.getElementById('tableSelect');
             const viewSchemaBtn = document.getElementById('viewSchemaBtn');
             const generateEntityBtn = document.getElementById('generateEntityBtn');
+            const generateNestjsBtn = document.getElementById('generateNestjsBtn');
+            const generateAllEntitiesBtn = document.getElementById('generateAllEntitiesBtn');
+            const generateAllNestjsBtn = document.getElementById('generateAllNestjsBtn');
             const schemaInfo = document.getElementById('schemaInfo');
             const schemaContent = document.getElementById('schemaContent');
+            
+            // Función para mostrar estado de carga en un botón
+            function setButtonLoading(button, loading) {
+                if (loading) {
+                    button.innerHTML = '<span class="loading"></span>Generando...';
+                    button.classList.add('disabled');
+                    button.disabled = true;
+                } else {
+                    button.innerHTML = button.dataset.originalText;
+                    button.classList.remove('disabled');
+                    button.disabled = false;
+                }
+            }
+            
+            // Guardar textos originales de los botones
+            generateAllEntitiesBtn.dataset.originalText = generateAllEntitiesBtn.innerHTML;
+            generateAllNestjsBtn.dataset.originalText = generateAllNestjsBtn.innerHTML;
             
             // Cargar las tablas disponibles
             try {
@@ -116,15 +272,6 @@
                 console.error('Error al cargar las tablas:', error);
                 tableSelect.innerHTML = '<option value="">Error al cargar las tablas</option>';
             }
-            // Obtener referencia al botón de generar todas las entidades
-            const generateAllBtn = document.getElementById('generateAllBtn');
-
-            // Generar y descargar todas las entidades
-            generateAllBtn.addEventListener('click', () => {
-                if (confirm('¿Estás seguro de que deseas generar entidades para todas las tablas? Esto puede tardar un momento.')) {
-                    window.location.href = '/api/generate-all-entities';
-                }
-            });
 
             // Ver esquema de la tabla seleccionada
             viewSchemaBtn.addEventListener('click', async () => {
@@ -142,13 +289,14 @@
                     // Mostrar el esquema en formato JSON
                     schemaContent.textContent = JSON.stringify(schema, null, 2);
                     schemaInfo.style.display = 'block';
+                    schemaInfo.scrollIntoView({ behavior: 'smooth' });
                 } catch (error) {
                     console.error('Error al obtener el esquema:', error);
                     alert('Error al obtener el esquema de la tabla');
                 }
             });
 
-            // Generar y descargar entidad TypeORM
+            // Generar solo entidad TypeORM
             generateEntityBtn.addEventListener('click', () => {
                 const tableName = tableSelect.value;
                 
@@ -157,10 +305,52 @@
                     return;
                 }
                 
-                // Redireccionar para descargar el archivo
                 window.location.href = `/api/generate-entity/${tableName}`;
+            });
+
+            // Generar archivos NestJS completos para una tabla
+            generateNestjsBtn.addEventListener('click', () => {
+                const tableName = tableSelect.value;
+                
+                if (!tableName) {
+                    alert('Por favor, selecciona una tabla');
+                    return;
+                }
+                
+                if (confirm(`¿Generar archivos NestJS completos para la tabla "${tableName}"?\n\nSe generarán:\n• Entity\n• Controller\n• Service\n• Module`)) {
+                    window.location.href = `/api/generate-nestjs/${tableName}`;
+                }
+            });
+
+            // Generar todas las entidades
+            generateAllEntitiesBtn.addEventListener('click', () => {
+                if (confirm('¿Estás seguro de que deseas generar entidades para todas las tablas?\n\nEsto puede tardar un momento.')) {
+                    setButtonLoading(generateAllEntitiesBtn, true);
+                    
+                    // Simular el tiempo de procesamiento
+                    setTimeout(() => {
+                        window.location.href = '/api/generate-all-entities';
+                        
+                        setTimeout(() => {
+                            setButtonLoading(generateAllEntitiesBtn, false);
+                        }, 3000);
+                    }, 500);
+                }
+            });
+
+            // Generar todos los archivos NestJS
+            generateAllNestjsBtn.addEventListener('click', () => {
+                if (confirm('¿Estás seguro de que deseas generar archivos NestJS completos para todas las tablas?\n\nEsto generará:\n• Entities\n• Controllers\n• Services\n• Modules\n\nPara todas las tablas. Puede tardar varios minutos.')) {
+                    setButtonLoading(generateAllNestjsBtn, true);
+                    
+                    setTimeout(() => {
+                        window.location.href = '/api/generate-all-nestjs';
+                        
+                        setTimeout(() => {
+                            setButtonLoading(generateAllNestjsBtn, false);
+                        }, 5000);
+                    }, 500);
+                }
             });
         });
     </script>
-</body>
-</html>
